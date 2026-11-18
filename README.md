@@ -66,8 +66,28 @@ python -m pip install -r requirements.txt
 - `weights/image_encoder.npz`：152 个视觉张量（提供，勿改）。
 - `assets/reference_outputs.npz`：参考数值，仅用于检查（提供，勿作为输入）。
 - `report/main.tex` + `report/figs/`：实验报告（Overleaf 模板，XeLaTeX 编译）。
+## 5.独立验证编码器数值（绕开 PIL 版本差异，因为我自己的python环境里之前的项目要运行依赖的是另一个版本）  
+下面的脚本把参考中已预处理好的图像直接喂给编码器，
+只验证 image_encoder.py
+的计算是否正确，不涉及 Pillow resize：  
+import numpy as np
+from runtime import load_weights
+from image_encoder import ImageEncoder
 
-## 5. GitHub 仓库 和 overleaf 路径
+enc = ImageEncoder(load_weights())
+with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
+    imgs = ref['preprocessed']                       # B=10
+    def chk(name, a, e, atol):
+        err = np.abs(a - e)
+        ok = np.allclose(a, e, atol=atol, rtol=2e-4)
+        print(f'{name:12} {"PASS" if ok else "FAIL"} max_abs={err.max():.3e}')
+    chk('patches',     enc.patchify(imgs[:2]),               ref['patches'][:2],     2e-4)
+    chk('tokens',      enc.embed(imgs[:2]),                  ref['input_tokens'][:2],2e-4)
+    chk('block0',      enc.blocks[0](enc.pre_norm(enc.embed(imgs[:2]))), ref['block0_tokens'][:2], 2e-4)
+    chk('last_tokens', enc.encode_tokens(imgs[:2]),          ref['last_tokens'][:2], 2e-4)
+    out = enc(imgs)
+    chk('output',      out,                                  ref['output_tokens'],   2e-5)    预期全部 PASS，最终 output 的 max_abs 在 1e-6 量级。
+## 6. GitHub 仓库 和 overleaf 路径
 
 仓库地址：https://github.com/Ressian/project1-numpy-student
 
