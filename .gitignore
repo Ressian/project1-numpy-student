@@ -1,0 +1,19 @@
+# Large supplied binaries (do not re-submit; obtain from the course attachment)
+weights/image_encoder.npz
+assets/reference_outputs.npz
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Generated outputs
+output_tokens.npz
+my_tokens.npz
+
+# LaTeX build artifacts
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.pdf
+report/*.synctex.gz
