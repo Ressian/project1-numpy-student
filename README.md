@@ -20,7 +20,6 @@
 > **重要（关于数值核对）**：参考输出是用特定版本的 Pillow 生成预处理的。
 > Pillow 的 bicubic resize 在不同版本间有细微差异，可能使 `check.py` 的
 > `preprocess` 及后续阶段报 FAIL。这是**输入图像预处理差异，不是编码器实现错误**。
-> 详见第 6 节。若只需复现编码器计算本身，用第 5 节的脚本可直接验证。
 
 ## 2. 安装
 
@@ -30,87 +29,8 @@
 python -m pip install -r requirements.txt
 ```
 
-## 3. 快速运行
 
-```bash
-# 用随附的 10 张图，生成 output_tokens.npz
-python run.py --output output_tokens.npz
-
-# 用自己的图片
-python run.py --images path/to/a.jpg path/to/b.png --output my_tokens.npz
-```
-
-`run.py` 输出 `ids`（图片 ID，顺序与输入一致）和 `output_tokens`（`[B,512]` float32）。
-可用下面的方式查看：
-
-```python
-import numpy as np
-d = np.load('output_tokens.npz')
-print(d['ids'])                 # 图片 ID
-print(d['output_tokens'].shape) # (10, 512)
-```
-
-## 4. 数值检查
-
-```bash
-python check.py --stage all
-```
-
-分阶段定位问题（按实现顺序）：
-
-```bash
-python check.py --stage assets
-python check.py --stage preprocess
-python check.py --stage patches
-python check.py --stage tokens
-python check.py --stage block0
-python check.py --stage last_tokens
-python check.py --stage output
-python check.py --stage batch
-```
-
-通过标准：形状一致、值为有限 float32、且
-`abs(actual - reference) <= atol + rtol * abs(reference)`。
-输出向量 `atol=2e-5, rtol=2e-4`；内部 token `atol=2e-4, rtol=2e-4`；
-预处理 `atol=2e-6`。`batch` 阶段会打乱顺序并重复图片，检验实现是否真正泛化。
-
-## 5. 独立验证编码器数值（绕开 PIL 版本差异）
-
-下面的脚本把参考中**已预处理好的图像**直接喂给编码器，只验证 `image_encoder.py`
-的计算是否正确，不涉及 Pillow resize：
-
-```python
-import numpy as np
-from runtime import load_weights
-from image_encoder import ImageEncoder
-
-enc = ImageEncoder(load_weights())
-with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
-    imgs = ref['preprocessed']                       # B=10
-    def chk(name, a, e, atol):
-        err = np.abs(a - e)
-        ok = np.allclose(a, e, atol=atol, rtol=2e-4)
-        print(f'{name:12} {"PASS" if ok else "FAIL"} max_abs={err.max():.3e}')
-    chk('patches',     enc.patchify(imgs[:2]),               ref['patches'][:2],     2e-4)
-    chk('tokens',      enc.embed(imgs[:2]),                  ref['input_tokens'][:2],2e-4)
-    chk('block0',      enc.blocks[0](enc.pre_norm(enc.embed(imgs[:2]))), ref['block0_tokens'][:2], 2e-4)
-    chk('last_tokens', enc.encode_tokens(imgs[:2]),          ref['last_tokens'][:2], 2e-4)
-    out = enc(imgs)
-    chk('output',      out,                                  ref['output_tokens'],   2e-5)
-```
-
-预期全部 PASS，最终 `output` 的 `max_abs` 在 1e-6 量级。
-
-## 6. 已知问题：`preprocess` 阶段 FAIL
-
-在本机（Pillow 11.0.0）运行 `check.py --stage all` 时，`preprocess` 会因 bicubic
-插值实现差异报 FAIL（max_abs 约 4e-1），后续阶段因此连带 FAIL。这是提供的
-`preprocess_image.py` 与生成参考时的 Pillow 版本不一致导致的输入差异，
-与 `image_encoder.py` 的实现无关。用第 5 节脚本可确认编码器本身全部 PASS。
-
-处理方式：把 Pillow 换成生成参考时的版本，或以第 5 节脚本作为复现依据。
-
-## 7. 实现要点（TODO-01 ~ TODO-06）
+## 3. 实现要点（TODO-01 ~ TODO-06）
 
 | TODO | 方法 | 结果 |
 | --- | --- | --- |
@@ -137,7 +57,7 @@ with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
 4. 每个 block 两个残差相加，无 LayerScale。
 5. k 是 4D `[B,H,N,64]`，只交换最后两轴（`swapaxes(-1,-2)`）。
 
-## 8. 文件说明
+## 4. 文件说明
 
 - `image_encoder.py`：学生实现（TODO-01~06），含充足中文注释。
 - `helpers.py`：LayerNorm、精确 GELU、注意力系数、单位向量（提供）。
@@ -147,17 +67,10 @@ with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
 - `assets/reference_outputs.npz`：参考数值，仅用于检查（提供，勿作为输入）。
 - `report/main.tex` + `report/figs/`：实验报告（Overleaf 模板，XeLaTeX 编译）。
 
-## 9. 复现实验报告
-
-`report/main.tex` 基于深圳大学实验报告 Overleaf 模板
-（https://github.com/ChaoFan996/Experiment-Report-Template-SZU）。
-在 Overleaf 新建项目，上传 `report/` 下全部文件，用 **XeLaTeX** 编译即可。
-正文不超过 5 页（封面与成绩评定页不计入正文）。
-
-## 10. GitHub 仓库
+## 5. GitHub 仓库 和 overleaf 路径
 
 仓库地址：https://github.com/Ressian/project1-numpy-student
 
-> 按课程要求，随附的大体积二进制文件（312MB 的 `weights/image_encoder.npz`
-> 与 7.4MB 的 `assets/reference_outputs.npz`）**未提交到仓库**，请从课程附件获取
-> 后放到对应路径。其余代码、图片、清单、README 与报告均已上传。
+> 按课程要求，随附的大体积二进制文件`weights/image_encoder.npz`, `assets/reference_outputs.npz`**未提交到仓库**，
+> 其余代码、图片、清单、README 与报告均已上传。
+> overleaf路径
