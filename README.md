@@ -156,4 +156,8 @@ with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
 
 ## 10. GitHub 仓库
 
-（上传后在此填写仓库链接）
+仓库地址：https://github.com/Ressian/project1-numpy-student
+
+> 按课程要求，随附的大体积二进制文件（312MB 的 `weights/image_encoder.npz`
+> 与 7.4MB 的 `assets/reference_outputs.npz`）**未提交到仓库**，请从课程附件获取
+> 后放到对应路径。其余代码、图片、清单、README 与报告均已上传。
