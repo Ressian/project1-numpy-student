@@ -84,7 +84,8 @@ with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
     chk('block0',      enc.blocks[0](enc.pre_norm(enc.embed(imgs[:2]))), ref['block0_tokens'][:2], 2e-4)
     chk('last_tokens', enc.encode_tokens(imgs[:2]),          ref['last_tokens'][:2], 2e-4)
     out = enc(imgs)
-    chk('output',      out,                                  ref['output_tokens'],   2e-5)```
+    chk('output',      out,                                  ref['output_tokens'],   2e-5)
+```
 ## 6. GitHub 仓库 和 overleaf 路径
 
 仓库地址：https://github.com/Ressian/project1-numpy-student
