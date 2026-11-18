@@ -92,4 +92,4 @@ with np.load('assets/reference_outputs.npz', allow_pickle=False) as ref:
 
 > 按课程要求，随附的大体积二进制文件`weights/image_encoder.npz`, `assets/reference_outputs.npz`**未提交到仓库**，
 > 其余代码、图片、清单、README 与报告均已上传。
-> overleaf路径
+> overleaf路径：https://cn.overleaf.com/project/6afd618efba295582eefece8/share#56788f23b686405d0ca7d8635934806e1052be048f2d536f
