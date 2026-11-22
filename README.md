@@ -4,7 +4,7 @@
 `[B,3,224,224]` 与随附的训练权重，输出每张图一个 **512 维单位向量** `[B,512]`，
 数值须与随附的 Torch FP32 参考一致。无需训练、无需 PyTorch / OpenCLIP / 网络。
 
-本仓库中**学生实现的部分是 `image_encoder.py`**（TODO-01 ~ TODO-06）；其余为课程提供。
+本仓库中**个人实现的部分是 `image_encoder.py`**（TODO-01 ~ TODO-06）；其余为课程提供。
 
 ---
 
@@ -17,9 +17,9 @@
 | Pillow | >=9.2,<13 | 11.0.0 |
 | imageio | >=2.31,<3 | 2.37.0 |
 
-> **重要（关于数值核对）**：参考输出是用特定版本的 Pillow 生成预处理的。
+> **重要（关于数值核对）**：参考输出是用特定版本的 Pillow 就是课程中的PIL早期的包体，生成预处理的。
 > Pillow 的 bicubic resize 在不同版本间有细微差异，可能使 `check.py` 的
-> `preprocess` 及后续阶段报 FAIL。这是**输入图像预处理差异，不是编码器实现错误**。
+> `preprocess` 及后续阶段报 FAIL。这是**输入图像在这个版本内包体的预处理差异，不是编码器实现错误**。
 
 ## 2. 安装
 
@@ -49,7 +49,7 @@ python -m pip install -r requirements.txt
 → post_norm + projection → [B,512] → unit_vector → [B,512]
 ```
 
-关键数值约定：
+关键数值约定（就是课程给的文件中部分实现写好的量）：
 
 1. patch 32×32，7×7；patch 投影**无 bias**，用 `patch_weight.T`。
 2. 注意力/MLP 线性权重存 `[out,in]`，需 `.T`；`visual.proj` 已是 `[in,out]`，**不转置**。
@@ -66,7 +66,7 @@ python -m pip install -r requirements.txt
 - `weights/image_encoder.npz`：152 个视觉张量（提供，勿改）。
 - `assets/reference_outputs.npz`：参考数值，仅用于检查（提供，勿作为输入）。
 - `report/main.tex` + `report/figs/`：实验报告（Overleaf 模板，XeLaTeX 编译）。
-## 5.独立验证编码器数值（绕开 PIL 版本差异，因为我自己的python环境里之前的项目要运行依赖的是另一个版本）  
+## 5.独立验证编码器数值（绕开 PIL 版本差异，因为我自己的python环境里之前的项目要运行依赖的是另一个版本，又用anaconda搞了个新环境验证过了）  （下面这个调用脚本是AI写的）
 ```python
 import numpy as np
 from runtime import load_weights
